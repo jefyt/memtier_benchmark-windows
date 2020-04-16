@@ -49,6 +49,13 @@
 #include "memtier_benchmark.h"
 #include "connections_manager.h"
 
+#ifdef _WIN32
+#define OPTVAL_TYPE char
+#else
+#define OPTVAL_TYPE void
+#define closesocket(fd)             close(fd)
+#endif /* #ifdef _WIN32 */
+
 void cluster_client_event_handler(evutil_socket_t sfd, short evtype, void *opaque)
 {
     shard_connection *sc = (shard_connection *) opaque;
@@ -143,7 +150,7 @@ shard_connection::shard_connection(unsigned int id, connections_manager* conns_m
 
 shard_connection::~shard_connection() {
     if (m_sockfd != -1) {
-        close(m_sockfd);
+        closesocket(m_sockfd);
         m_sockfd = -1;
     }
 
@@ -213,7 +220,7 @@ int shard_connection::setup_socket(struct connect_info* addr) {
 
     // clean up existing socket
     if (m_sockfd != -1)
-        close(m_sockfd);
+        closesocket(m_sockfd);
 
     if (m_unix_sockaddr != NULL) {
         m_sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -230,22 +237,28 @@ int shard_connection::setup_socket(struct connect_info* addr) {
         // configure socket behavior
         struct linger ling = {0, 0};
         int flags = 1;
-        int error = setsockopt(m_sockfd, SOL_SOCKET, SO_KEEPALIVE, (void *) &flags, sizeof(flags));
+
+        int error = setsockopt(m_sockfd, SOL_SOCKET, SO_KEEPALIVE, (OPTVAL_TYPE *) &flags, sizeof(flags));
         assert(error == 0);
 
-        error = setsockopt(m_sockfd, SOL_SOCKET, SO_LINGER, (void *) &ling, sizeof(ling));
+        error = setsockopt(m_sockfd, SOL_SOCKET, SO_LINGER, (OPTVAL_TYPE *) &ling, sizeof(ling));
         assert(error == 0);
 
-        error = setsockopt(m_sockfd, IPPROTO_TCP, TCP_NODELAY, (void *) &flags, sizeof(flags));
+        error = setsockopt(m_sockfd, IPPROTO_TCP, TCP_NODELAY, (OPTVAL_TYPE *) &flags, sizeof(flags));
         assert(error == 0);
     }
 
     // set non-blocking behavior
+#ifndef _WIN32
     flags = 1;
     if ((flags = fcntl(m_sockfd, F_GETFL, 0)) < 0 ||
         fcntl(m_sockfd, F_SETFL, flags | O_NONBLOCK) < 0) {
+#else
+    u_long ul_flags = 1;
+    if (ioctlsocket(m_sockfd, FIONBIO, &ul_flags) < 0) {
+#endif /* #ifndef _WIN32 */
         benchmark_error_log("connect: failed to set non-blocking flag.\n");
-        close(m_sockfd);
+        closesocket(m_sockfd);
         m_sockfd = -1;
         return -1;
     }
@@ -277,7 +290,11 @@ int shard_connection::connect(struct connect_info* addr) {
     if (::connect(m_sockfd,
                   m_unix_sockaddr ? (struct sockaddr *) m_unix_sockaddr : addr->ci_addr,
                   m_unix_sockaddr ? sizeof(struct sockaddr_un) : addr->ci_addrlen) == -1) {
+#ifdef _WIN32
+        if (WSAGetLastError() == WSAEWOULDBLOCK)
+#else
         if (errno == EINPROGRESS || errno == EWOULDBLOCK)
+#endif /* #ifdef _WIN32 */
             return 0;
 
         benchmark_error_log("connect failed, error = %s\n", strerror(errno));
@@ -289,7 +306,7 @@ int shard_connection::connect(struct connect_info* addr) {
 
 void shard_connection::disconnect() {
     if (m_sockfd != -1) {
-        close(m_sockfd);
+        closesocket(m_sockfd);
         m_sockfd = -1;
     }
 
@@ -494,7 +511,7 @@ void shard_connection::handle_event(short evtype)
         int error = -1;
         socklen_t errsz = sizeof(error);
 
-        if (getsockopt(m_sockfd, SOL_SOCKET, SO_ERROR, (void *) &error, &errsz) == -1) {
+        if (getsockopt(m_sockfd, SOL_SOCKET, SO_ERROR, (OPTVAL_TYPE *) &error, &errsz) == -1) {
             benchmark_error_log("connect: error getting connect response (getsockopt): %s\n", strerror(errno));
             disconnect();
 
@@ -521,7 +538,11 @@ void shard_connection::handle_event(short evtype)
     assert(get_connection_state() == conn_connected);
     if ((evtype & EV_WRITE) == EV_WRITE && evbuffer_get_length(m_write_buf) > 0) {
         if (evbuffer_write(m_write_buf, m_sockfd) < 0) {
+#ifdef _WIN32
+            if (WSAGetLastError() != WSAEWOULDBLOCK) {
+#else
             if (errno != EWOULDBLOCK) {
+#endif /* #ifdef _WIN32 */
                 benchmark_error_log("write error: %s\n", strerror(errno));
                 disconnect();
 
@@ -536,7 +557,12 @@ void shard_connection::handle_event(short evtype)
             ret = evbuffer_read(m_read_buf, m_sockfd, -1);
         }
 
-        if (ret < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+        if (ret < 0 && 
+#ifdef _WIN32
+            (WSAGetLastError() != WSAEWOULDBLOCK)) {
+#else
+            errno != EAGAIN && errno != EWOULDBLOCK) {
+#endif /* #ifdef _WIN32 */
             benchmark_error_log("read error: %s\n", strerror(errno));
             disconnect();
 

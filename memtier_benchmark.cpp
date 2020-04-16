@@ -40,19 +40,26 @@
 #include "obj_gen.h"
 #include "memtier_benchmark.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#include <bcrypt.h>
+
+#define random()        rand()
+#define srandom(seed)   srand(seed)
+#endif /* #ifdef _WIN32 */
 
 static int log_level = 0;
 void benchmark_log_file_line(int level, const char *filename, unsigned int line, const char *fmt, ...)
 {
     if (level > log_level)
         return;
-    
-    va_list args;    
+
+    va_list args;
     char fmtbuf[1024];
 
     snprintf(fmtbuf, sizeof(fmtbuf)-1, "%s:%u: ", filename, line);
     strcat(fmtbuf, fmt);
-    
+
     va_start(args, fmt);
     vfprintf(stderr, fmtbuf, args);
     va_end(args);
@@ -74,7 +81,7 @@ void benchmark_log(int level, const char *fmt, ...)
 static void config_print(FILE *file, struct benchmark_config *cfg)
 {
     char tmpbuf[512];
-    
+
     fprintf(file,
         "server = %s\n"
         "port = %u\n"
@@ -121,7 +128,7 @@ static void config_print(FILE *file, struct benchmark_config *cfg)
         cfg->unix_socket,
         cfg->protocol,
         cfg->out_file,
-        cfg->client_stats,	
+        cfg->client_stats,
         cfg->run_count,
         cfg->debug,
         cfg->requests,
@@ -161,9 +168,9 @@ static void config_print(FILE *file, struct benchmark_config *cfg)
 static void config_print_to_json(json_handler * jsonhandler, struct benchmark_config *cfg)
 {
     char tmpbuf[512];
-    
-    jsonhandler->open_nesting("configuration");  
-	
+
+    jsonhandler->open_nesting("configuration");
+
     jsonhandler->write_obj("server"            ,"\"%s\"",      	cfg->server);
     jsonhandler->write_obj("port"              ,"%u",          	cfg->port);
     jsonhandler->write_obj("unix socket"       ,"\"%s\"",      	cfg->unix_socket);
@@ -250,6 +257,7 @@ static void config_init_defaults(struct benchmark_config *cfg)
 static int generate_random_seed()
 {
     int R = 0;
+#ifndef _WIN32
     FILE* f = fopen("/dev/random", "r");
     if (f)
     {
@@ -257,7 +265,10 @@ static int generate_random_seed()
         fclose(f);
         ignore++;//ignore warning
     }
-    
+#else
+    BCryptGenRandom(NULL, (PUCHAR)&R, sizeof(R), BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+#endif /* #ifndef _WIN32 */
+
     return (int)time(NULL)^getpid()^R;
 }
 
@@ -343,14 +354,14 @@ static int config_parse_args(int argc, char *argv[], struct benchmark_config *cf
         o_no_expiry,
         o_wait_ratio,
         o_num_slaves,
-        o_wait_timeout, 
+        o_wait_timeout,
         o_json_out_file,
         o_cluster_mode,
         o_command,
         o_command_key_pattern,
         o_command_ratio
     };
-    
+
     static struct option long_options[] = {
         { "server",                     1, 0, 's' },
         { "port",                       1, 0, 'p' },
@@ -366,7 +377,7 @@ static int config_parse_args(int argc, char *argv[], struct benchmark_config *cf
         { "randomize",                  0, 0, o_randomize },
         { "requests",                   1, 0, 'n' },
         { "clients",                    1, 0, 'c' },
-        { "threads",                    1, 0, 't' },        
+        { "threads",                    1, 0, 't' },
         { "test-time",                  1, 0, o_test_time },
         { "ratio",                      1, 0, o_ratio },
         { "pipeline",                   1, 0, o_pipeline },
@@ -408,7 +419,7 @@ static int config_parse_args(int argc, char *argv[], struct benchmark_config *cf
     int option_index;
     int c;
     char *endptr;
-    while ((c = getopt_long(argc, argv, 
+    while ((c = getopt_long(argc, argv,
                 "s:S:p:P:o:x:DRn:c:t:d:a:h", long_options, &option_index)) != -1)
     {
         switch (c) {
@@ -858,7 +869,7 @@ void usage() {
             "                                 distribution with the center in the middle of the range)"
             "\n"
             );
-    
+
     exit(2);
 }
 
@@ -872,7 +883,7 @@ struct cg_thread {
     abstract_protocol* m_protocol;
     pthread_t m_thread;
     bool m_finished;
-    
+
     cg_thread(unsigned int id, benchmark_config* config, object_generator* obj_gen) :
         m_thread_id(id), m_config(config), m_obj_gen(obj_gen), m_cg(NULL), m_protocol(NULL), m_finished(false)
     {
@@ -881,7 +892,7 @@ struct cg_thread {
 
         m_cg = new client_group(m_config, m_protocol, m_obj_gen);
     }
-        
+
     ~cg_thread()
     {
         if (m_cg != NULL) {
@@ -898,10 +909,10 @@ struct cg_thread {
             return -1;
         return m_cg->prepare();
     }
-    
+
     int start(void)
     {
-        return pthread_create(&m_thread, NULL, cg_thread_start, (void *)this);        
+        return pthread_create(&m_thread, NULL, cg_thread_start, (void *)this);
     }
 
     void join(void)
@@ -910,9 +921,9 @@ struct cg_thread {
         int ret;
 
         ret = pthread_join(m_thread, (void **)&retval);
-        assert(ret == 0);        
+        assert(ret == 0);
     }
-    
+
 };
 
 static void* cg_thread_start(void *t)
@@ -920,14 +931,14 @@ static void* cg_thread_start(void *t)
     cg_thread* thread = (cg_thread*) t;
     thread->m_cg->run();
     thread->m_finished = true;
-    
+
     return t;
 }
 
 void size_to_str(unsigned long int size, char *buf, int buf_len)
 {
     if (size >= 1024*1024*1024) {
-        snprintf(buf, buf_len, "%.2fGB", 
+        snprintf(buf, buf_len, "%.2fGB",
             (float) size / (1024*1024*1024));
     } else if (size >= 1024*1024) {
         snprintf(buf, buf_len, "%.2fMB",
@@ -935,7 +946,7 @@ void size_to_str(unsigned long int size, char *buf, int buf_len)
     } else {
         snprintf(buf, buf_len, "%.2fKB",
             (float) size / 1024);
-    }    
+    }
 }
 
 run_stats run_benchmark(int run_id, benchmark_config* cfg, object_generator* obj_gen)
@@ -984,9 +995,9 @@ run_stats run_benchmark(int run_id, benchmark_config* cfg, object_generator* obj
         unsigned long int total_ops = 0;
         unsigned long int total_bytes = 0;
         unsigned long int duration = 0;
-        unsigned int thread_counter = 0; 
+        unsigned int thread_counter = 0;
         unsigned long int total_latency = 0;
-        
+
         for (std::vector<cg_thread*>::iterator i = threads.begin(); i != threads.end(); i++) {
             if (!(*i)->m_finished)
                 active_threads++;
@@ -998,7 +1009,7 @@ run_stats run_benchmark(int run_id, benchmark_config* cfg, object_generator* obj
             float factor = ((float)(thread_counter - 1) / thread_counter);
             duration =  factor * duration +  (float)(*i)->m_cg->get_duration_usec() / thread_counter ;
         }
-        
+
         unsigned long int cur_ops = total_ops-prev_ops;
         unsigned long int cur_bytes = total_bytes-prev_bytes;
         unsigned long int cur_duration = duration-prev_duration;
@@ -1007,7 +1018,7 @@ run_stats run_benchmark(int run_id, benchmark_config* cfg, object_generator* obj
         prev_bytes = total_bytes;
         prev_latency = total_latency;
         prev_duration = duration;
-        
+
         unsigned long int ops_sec = 0;
         unsigned long int bytes_sec = 0;
         double avg_latency = 0;
@@ -1025,13 +1036,13 @@ run_stats run_benchmark(int run_id, benchmark_config* cfg, object_generator* obj
         char bytes_str[40], cur_bytes_str[40];
         size_to_str(bytes_sec, bytes_str, sizeof(bytes_str)-1);
         size_to_str(cur_bytes_sec, cur_bytes_str, sizeof(cur_bytes_str)-1);
-        
+
         double progress = 0;
         if(cfg->requests)
             progress = 100.0 * total_ops / ((double)cfg->requests*cfg->clients*cfg->threads);
         else
             progress = 100.0 * (duration / 1000000.0)/cfg->test_time;
-        
+
         fprintf(stderr, "[RUN #%u %.0f%%, %3u secs] %2u threads: %11lu ops, %7lu (avg: %7lu) ops/sec, %s/sec (avg: %s/sec), %5.2f (avg: %5.2f) msec latency\r",
             run_id, progress, (unsigned int) (duration / 1000000), active_threads, total_ops, cur_ops_sec, ops_sec, cur_bytes_str, bytes_str, cur_latency, avg_latency);
     } while (active_threads > 0);
@@ -1065,7 +1076,7 @@ run_stats run_benchmark(int run_id, benchmark_config* cfg, object_generator* obj
         threads.erase(threads.begin());
         delete t;
     }
-    
+
     return stats;
 }
 
@@ -1073,6 +1084,13 @@ run_stats run_benchmark(int run_id, benchmark_config* cfg, object_generator* obj
 int main(int argc, char *argv[])
 {
     struct benchmark_config cfg;
+
+#ifdef _WIN32
+    WSADATA wsaData;
+    if(WSAStartup(MAKEWORD(2,2), &wsaData)) {
+        fprintf(stderr, "Failed to initialize Winsock2!\n");
+    }
+#endif
 
     memset(&cfg, 0, sizeof(struct benchmark_config));
     cfg.arbitrary_commands = new arbitrary_command_list();
@@ -1093,15 +1111,17 @@ int main(int argc, char *argv[])
     json_handler *jsonhandler = NULL;
     if (cfg.json_out_file != NULL){
         jsonhandler = new json_handler((const char *)cfg.json_out_file);
-        // We allways print the configuration to the JSON file      
+        // We allways print the configuration to the JSON file
         config_print_to_json(jsonhandler,&cfg);
     }
 
+#ifndef _WIN32
     struct rlimit rlim;
     if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
         benchmark_error_log("error: getrlimit failed: %s\n", strerror(errno));
         exit(1);
     }
+#endif /* #ifndef _WIN32 */
 
     if (cfg.unix_socket != NULL &&
         (cfg.server != NULL || cfg.port > 0)) {
@@ -1119,6 +1139,7 @@ int main(int argc, char *argv[])
         }
     }
 
+#ifndef _WIN32
     unsigned int fds_needed = (cfg.threads * cfg.clients) + (cfg.threads * 10) + 10;
     if (fds_needed > rlim.rlim_cur) {
         if (fds_needed > rlim.rlim_max && getuid() != 0) {
@@ -1132,6 +1153,7 @@ int main(int argc, char *argv[])
             exit(1);
         }
     }
+#endif /* #ifndef _WIN32 */
 
     // create and configure object generator
     object_generator* obj_gen = NULL;
@@ -1172,12 +1194,12 @@ int main(int argc, char *argv[])
                 exit(1);
         }
 
-        if (!cfg.generate_keys) {        
+        if (!cfg.generate_keys) {
             // read keys
             fprintf(stderr, "Reading keys from %s...", cfg.data_import);
             keylist = new imported_keylist(cfg.data_import);
             assert(keylist != NULL);
-            
+
             if (!keylist->read_keys()) {
                 fprintf(stderr, "\nerror: failed to read keys.\n");
                 exit(1);
@@ -1244,7 +1266,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "error: data-size, data-size-list or data-size-range must be specified.\n");
         usage();
     }
-    
+
     if (!cfg.data_import || cfg.generate_keys) {
         obj_gen->set_key_prefix(cfg.key_prefix);
         obj_gen->set_key_range(cfg.key_minimum, cfg.key_maximum);
@@ -1253,7 +1275,7 @@ int main(int argc, char *argv[])
         if (cfg.key_pattern[key_pattern_set]!='G' && cfg.key_pattern[key_pattern_get]!='G') {
             fprintf(stderr, "error: key-stddev and key-median are only allowed together with key-pattern set to G.\n");
             usage();
-        }   
+        }
         if (cfg.key_median!=0 && (cfg.key_median<cfg.key_minimum || cfg.key_median>cfg.key_maximum)) {
             fprintf(stderr, "error: key-median must be between key-minimum and key-maximum.\n");
             usage();
@@ -1286,12 +1308,12 @@ int main(int argc, char *argv[])
             all_stats.push_back(stats);
         }
         //
-        // Print some run information        
+        // Print some run information
         fprintf(outfile,
                "%-9u Threads\n"
                "%-9u Connections per thread\n"
                "%-9llu %s\n",
-               cfg.threads, cfg.clients, 
+               cfg.threads, cfg.clients,
                (unsigned long long)(cfg.requests > 0 ? cfg.requests : cfg.test_time),
                cfg.requests > 0 ? "Requests per client"  : "Seconds");
 
@@ -1310,12 +1332,12 @@ int main(int argc, char *argv[])
             unsigned int min_ops_sec = (unsigned int) -1;
             unsigned int max_ops_sec = 0;
             run_stats* worst = NULL;
-            run_stats* best = NULL;        
+            run_stats* best = NULL;
             for (std::vector<run_stats>::iterator i = all_stats.begin(); i != all_stats.end(); i++) {
                 unsigned long usecs = i->get_duration_usec();
                 unsigned int ops_sec = (int)(((double)i->get_total_ops() / (usecs > 0 ? usecs : 1)) * 1000000);
                 if (ops_sec < min_ops_sec || worst == NULL) {
-                    min_ops_sec = ops_sec;                
+                    min_ops_sec = ops_sec;
                     worst = &(*i);
                 }
                 if (ops_sec > max_ops_sec || best == NULL) {
@@ -1356,7 +1378,7 @@ int main(int argc, char *argv[])
                         "%-10llu keys failed.\n",
                         client->get_verified_keys(),
                         client->get_errors());
-        
+
         if (jsonhandler != NULL){
             jsonhandler->open_nesting("client verifications results");
             jsonhandler->write_obj("keys verified successfuly", "%-10llu",  client->get_verified_keys());
@@ -1386,4 +1408,9 @@ int main(int argc, char *argv[])
     if (cfg.arbitrary_commands != NULL) {
         delete cfg.arbitrary_commands;
     }
+
+#ifdef _WIN32
+    WSACleanup();
+#endif
 }
+
