@@ -224,24 +224,36 @@ int shard_connection::setup_socket(struct connect_info* addr) {
             return -1;
         }
 
+#ifdef _WIN32
+#define SOCK_OPTVAL_PTR     char *
+#else
+#define SOCK_OPTVAL_PTR     void *
+#endif /* #ifdef _WIN32 */
+
         // configure socket behavior
         struct linger ling = {0, 0};
         int flags = 1;
-        int error = setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (void *) &flags, sizeof(flags));
+        int error = setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (SOCK_OPTVAL_PTR) &flags, sizeof(flags));
         assert(error == 0);
 
-        error = setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (void *) &ling, sizeof(ling));
+        error = setsockopt(sockfd, SOL_SOCKET, SO_LINGER, (SOCK_OPTVAL_PTR) &ling, sizeof(ling));
         assert(error == 0);
 
-        error = setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (void *) &flags, sizeof(flags));
+        error = setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, (SOCK_OPTVAL_PTR) &flags, sizeof(flags));
         assert(error == 0);
     }
 
     // set non-blocking behavior
+#ifndef _WIN32
     flags = 1;
     if ((flags = fcntl(sockfd, F_GETFL, 0)) < 0 ||
         fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) < 0) {
         close(sockfd);
+#else
+    u_long ul_flags = 1;
+    if (ioctlsocket(sockfd, FIONBIO, &ul_flags) < 0) {
+        closesocket(sockfd);
+#endif /* #ifndef _WIN32 */
         return -1;
     }
 

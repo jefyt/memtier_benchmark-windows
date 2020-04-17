@@ -34,6 +34,11 @@
 #include "obj_gen.h"
 #include "memtier_benchmark.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#include <bcrypt.h>
+#endif /* #ifdef _WIN32 */
+
 random_generator::random_generator()
 {
     set_seed(0);
@@ -83,6 +88,8 @@ unsigned long long random_generator::get_random()
     rn = jrand48(m_data_blob);
     llrn |= rn & 0xffffffff; // reset the sign extension bits of negative numbers
     llrn &= 0x8000000000000000; // avoid any trouble from sign mismatch and negative numbers
+#elif (defined _WIN32)
+    llrn = (unsigned long long)rand();
 #else
     #error no random function
 #endif
@@ -95,6 +102,8 @@ unsigned long long random_generator::get_random_max() const
     return 0x3fffffffffffffff;//62 bits
 #elif (defined HAVE_DRAND48)
     return 0x7fffffffffffffff;//63 bits
+#elif (defined _WIN32)
+    return RAND_MAX;//31 bits
 #endif
 }
 
@@ -232,10 +241,12 @@ void object_generator::alloc_value_buffer(void)
         if (!m_random_data) {
             memset(m_value_buffer, 'x', size);
         } else {
+#ifndef _WIN32
             if (m_random_fd == -1) {
                 m_random_fd = open("/dev/urandom",  O_RDONLY);
                 assert(m_random_fd != -1);
             }
+#endif /* #ifndef _WIN32 */
 
             char buf1[64] = { 0 };
             char buf2[64] = { 0 };
@@ -252,10 +263,15 @@ void object_generator::alloc_value_buffer(void)
                     if (buf2_idx >= sizeof(buf2)) {
                         iter++;
                         if (iter == 20) {
+#ifndef _WIN32
                             ret = read(m_random_fd, buf1, sizeof(buf1));
                             assert(ret > -1);
                             ret = read(m_random_fd, buf2, sizeof(buf2));
                             assert(ret > -1);
+#else
+                            BCryptGenRandom(NULL, (PUCHAR)buf1, sizeof(buf1), BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+                            BCryptGenRandom(NULL, (PUCHAR)buf2, sizeof(buf2), BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+#endif /* #ifndef _WIN32 */
                             buf1_idx = buf2_idx = iter = 0;
                         }
                     }

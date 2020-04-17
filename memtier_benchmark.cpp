@@ -46,6 +46,13 @@
 #include "obj_gen.h"
 #include "memtier_benchmark.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#include <bcrypt.h>
+
+#define random()        rand()
+#define srandom(seed)   srand(seed)
+#endif /* #ifdef _WIN32 */
 
 static int log_level = 0;
 void benchmark_log_file_line(int level, const char *filename, unsigned int line, const char *fmt, ...)
@@ -280,6 +287,7 @@ static void config_init_defaults(struct benchmark_config *cfg)
 static int generate_random_seed()
 {
     int R = 0;
+#ifndef _WIN32
     FILE* f = fopen("/dev/random", "r");
     if (f)
     {
@@ -287,6 +295,9 @@ static int generate_random_seed()
         fclose(f);
         ignore++;//ignore warning
     }
+#else
+    BCryptGenRandom(NULL, (PUCHAR)&R, sizeof(R), BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+#endif /* #ifndef _WIN32 */
 
     return (int)time(NULL)^getpid()^R;
 }
@@ -1211,6 +1222,13 @@ int main(int argc, char *argv[])
     benchmark_config cfg = benchmark_config();
     cfg.arbitrary_commands = new arbitrary_command_list();
 
+#ifdef _WIN32
+    WSADATA wsaData;
+    if(WSAStartup(MAKEWORD(2,2), &wsaData)) {
+        fprintf(stderr, "Failed to initialize Winsock2!\n");
+    }
+#endif
+
     if (config_parse_args(argc, argv, &cfg) < 0) {
         usage();
     }
@@ -1281,11 +1299,13 @@ int main(int argc, char *argv[])
         config_print_to_json(jsonhandler,&cfg);
     }
 
+#ifndef _WIN32
     struct rlimit rlim;
     if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
         benchmark_error_log("error: getrlimit failed: %s\n", strerror(errno));
         exit(1);
     }
+#endif /* #ifndef _WIN32 */
 
     if (cfg.unix_socket != NULL &&
         (cfg.server != NULL || cfg.port > 0)) {
@@ -1303,6 +1323,7 @@ int main(int argc, char *argv[])
         }
     }
 
+#ifndef _WIN32
     unsigned int fds_needed = (cfg.threads * cfg.clients) + (cfg.threads * 10) + 10;
     if (fds_needed > rlim.rlim_cur) {
         if (fds_needed > rlim.rlim_max && getuid() != 0) {
@@ -1316,6 +1337,7 @@ int main(int argc, char *argv[])
             exit(1);
         }
     }
+#endif /* #ifndef _WIN32 */
 
     // create and configure object generator
     object_generator* obj_gen = NULL;
@@ -1585,5 +1607,9 @@ int main(int argc, char *argv[])
 
         cleanup_openssl();
     }
+#endif
+
+#ifdef _WIN32
+    WSACleanup();
 #endif
 }

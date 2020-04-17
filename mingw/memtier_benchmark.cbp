@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="memtier_benchmark" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug32">
+				<Option output="bin/Debug32/memtier_benchmark" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug32/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-m32" />
+					<Add option="-g" />
+					<Add directory="$(LIBEVENT32_DIR)/include" />
+					<Add directory="$(OPENSSL32_DIR)/include" />
+				</Compiler>
+				<Linker>
+					<Add option="-m32" />
+					<Add directory="$(LIBEVENT32_DIR)/lib" />
+					<Add directory="$(OPENSSL32_DIR)/lib" />
+				</Linker>
+			</Target>
+			<Target title="Release32">
+				<Option output="bin/Release32/memtier_benchmark" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release32/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-m32" />
+					<Add directory="$(LIBEVENT32_DIR)/include" />
+					<Add directory="$(OPENSSL32_DIR)/include" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add option="-m32" />
+					<Add directory="$(LIBEVENT32_DIR)/lib" />
+					<Add directory="$(OPENSSL32_DIR)/lib" />
+				</Linker>
+			</Target>
+			<Target title="Debug64">
+				<Option output="bin/Debug64/memtier_benchmark" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug64/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-m64" />
+					<Add option="-g" />
+					<Add directory="$(LIBEVENT64_DIR)/include" />
+					<Add directory="$(OPENSSL64_DIR)/include" />
+				</Compiler>
+				<Linker>
+					<Add option="-m64" />
+					<Add directory="$(LIBEVENT64_DIR)/lib" />
+					<Add directory="$(OPENSSL64_DIR)/lib" />
+				</Linker>
+			</Target>
+			<Target title="Release64">
+				<Option output="bin/Release64/memtier_benchmark" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release64/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-m64" />
+					<Add directory="$(LIBEVENT64_DIR)/include" />
+					<Add directory="$(OPENSSL64_DIR)/include" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add option="-m64" />
+					<Add directory="$(LIBEVENT64_DIR)/lib" />
+					<Add directory="$(OPENSSL64_DIR)/lib" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wextra" />
+			<Add option="-Wall" />
+			<Add option="-g" />
+			<Add option="-D_POSIX" />
+			<Add option="-DHAVE_CONFIG_H" />
+			<Add option="-DWIN32_LEAN_AND_MEAN" />
+			<Add option="-D_WIN32_WINNT=0x0600" />
+			<Add directory=".." />
+			<Add directory="include" />
+			<Add directory="src" />
+		</Compiler>
+		<Linker>
+			<Add option="-static-libstdc++" />
+			<Add option="-static-libgcc" />
+			<Add option="-Wl,-Bstatic -levent -Wl,-Bstatic -levent_openssl -Wl,-Bstatic -lssl -Wl,-Bstatic -lcrypto -Wl,-Bstatic -lpthread -Wl,-Bdynamic -lws2_32 -lbcrypt" />
+		</Linker>
+		<Unit filename="../JSON_handler.cpp" />
+		<Unit filename="../JSON_handler.h" />
+		<Unit filename="../client.cpp" />
+		<Unit filename="../client.h" />
+		<Unit filename="../cluster_client.cpp" />
+		<Unit filename="../cluster_client.h" />
+		<Unit filename="../config_types.cpp" />
+		<Unit filename="../config_types.h" />
+		<Unit filename="../connections_manager.h" />
+		<Unit filename="../file_io.cpp" />
+		<Unit filename="../file_io.h" />
+		<Unit filename="../item.cpp" />
+		<Unit filename="../item.h" />
+		<Unit filename="../memtier_benchmark.cpp" />
+		<Unit filename="../memtier_benchmark.h" />
+		<Unit filename="../obj_gen.cpp" />
+		<Unit filename="../obj_gen.h" />
+		<Unit filename="../protocol.cpp" />
+		<Unit filename="../protocol.h" />
+		<Unit filename="../run_stats.cpp" />
+		<Unit filename="../run_stats.h" />
+		<Unit filename="../run_stats_types.cpp" />
+		<Unit filename="../run_stats_types.h" />
+		<Unit filename="../shard_connection.cpp" />
+		<Unit filename="../shard_connection.h" />
+		<Extensions>
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
