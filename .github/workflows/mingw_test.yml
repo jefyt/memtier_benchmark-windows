@@ -1,0 +1,111 @@
+name: Mingw-w64 CI
+
+on:
+  push:
+    branches:
+      - '*mingw*'
+    tags:
+      - '*mingw*'
+
+jobs:
+  build-mingw:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get install autoconf automake pkg-config libevent-dev libpcre3-dev libssl-dev
+        sudo apt-get install wine64
+    - name: Build
+      run: |
+        DOCKER_IMAGE='debian:testing'
+        time docker pull "${DOCKER_IMAGE}"
+        time docker run -v "${PWD}:${PWD}" -w "${PWD}" "${DOCKER_IMAGE}" sh -c ./mingw/ci-debian.sh
+        MB_EXE="memtier_benchmark-win64.exe"
+        ln -sf "mingw/${MB_EXE}"
+        echo -e "#!/bin/sh\nwine ./../${MB_EXE} \$@" | tee memtier_benchmark
+        chmod +x memtier_benchmark
+    - name: Setup Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.6'
+
+    - name: Cache pip
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip # This path is specific to Ubuntu
+        # Look to see if there is a cache hit for the corresponding requirements file
+        key: ${{ runner.os }}-pip-${{ hashFiles('tests/test_requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          ${{ runner.os }}-
+    - name: Install Python dependencies
+      run: pip install -r tests/test_requirements.txt
+
+    - name: Cache Redis
+      id: cache-redis
+      uses: actions/cache@v1
+      with:
+        path: /home/runner/work/memtier_benchmark/memtier_benchmark/redis
+        key: ${{ runner.os }}-redis
+
+    - name: Install Redis Server test dependencies
+      if: steps.cache-redis.outputs.cache-hit != 'true'
+      run: |
+        git clone git://github.com/antirez/redis.git --branch unstable
+        cd redis
+        make BUILD_TLS=yes
+        ./utils/gen-test-certs.sh
+        ./src/redis-server --version
+        cd ..
+
+    - name: Test OSS TCP
+      run: |
+        cd tests
+        MEMTIER_BINARY=./../memtier_benchmark \
+        python3 -m RLTest \
+        --env oss -v --clear-logs \
+        --oss-redis-path ../redis/src/redis-server
+        cd ..
+
+    - name: Test OSS TCP TLS
+      run: |
+        cd tests
+        TLS_CERT=../redis/tests/tls/redis.crt \
+        TLS_KEY=../redis/tests/tls/redis.key \
+        TLS_CACERT=../redis/tests/tls/ca.crt \
+        MEMTIER_BINARY=../memtier_benchmark \
+        python3 -m RLTest \
+          --env oss -v --clear-logs \
+          --oss-redis-path ../redis/src/redis-server \
+          --tls-cert-file ../redis/tests/tls/redis.crt \
+          --tls-key-file ../redis/tests/tls/redis.key \
+          --tls-ca-cert-file ../redis/tests/tls/ca.crt \
+          --tls
+        cd ..
+
+    - name: Test OSS-CLUSTER TCP
+      run: |
+        cd tests
+        MEMTIER_BINARY=./../memtier_benchmark \
+        python3 -m RLTest \
+        --env oss-cluster -v --clear-logs --shards-count 3 \
+        --oss-redis-path ../redis/src/redis-server
+        cd ..
+
+    - name: Test OSS-CLUSTER TCP TLS
+      run: |
+        cd tests
+        TLS_CERT=../redis/tests/tls/redis.crt \
+        TLS_KEY=../redis/tests/tls/redis.key \
+        TLS_CACERT=../redis/tests/tls/ca.crt \
+        MEMTIER_BINARY=../memtier_benchmark \
+        python3 -m RLTest \
+          --env oss-cluster --shards-count 3 -v --clear-logs \
+          --oss-redis-path ../redis/src/redis-server \
+          --tls-cert-file ../redis/tests/tls/redis.crt \
+          --tls-key-file ../redis/tests/tls/redis.key \
+          --tls-ca-cert-file ../redis/tests/tls/ca.crt \
+          --tls
+        cd ..
