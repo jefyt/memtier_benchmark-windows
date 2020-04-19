@@ -19,6 +19,10 @@
 #ifndef _CONFIG_TYPES_H
 #define _CONFIG_TYPES_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
 #endif
