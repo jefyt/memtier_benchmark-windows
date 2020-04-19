@@ -1,0 +1,22 @@
+name: Mingw-w64 CI
+
+on:
+  push:
+    branches:
+      - '*mingw*'
+    tags:
+      - '*mingw*'
+
+jobs:
+  build-mingw:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        sudo apt-get -qq update
+    - name: Build
+      run: |
+        DOCKER_IMAGE='debian:testing'
+        time docker pull "${DOCKER_IMAGE}"
+        time docker run -v "${PWD}:${PWD}" -w "${PWD}" "${DOCKER_IMAGE}" sh -c ./mingw/ci-debian.sh
