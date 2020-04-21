@@ -1,5 +1,8 @@
 #!/bin/sh -ex
 
+# Set default artifacts dir if not specified
+[ -z "${MB_ARTIFACTS_DIR}" ] && MB_ARTIFACTS_DIR="artifacts"
+
 alias curl='curl -fsSR --connect-timeout 15 -m 20 --retry 3'
 
 gpg_recv_key() {
@@ -74,17 +77,20 @@ build_mb() {
   make CXX=${CC_PREFIX}g++ ${CPU} -f memtier_benchmark.mk
 
   # Rename binaries
-  mv -v "bin/Debug${CPU}/memtier_benchmark.exe" "memtier_benchmark-win${CPU}_dbg.exe"
-  mv -v "bin/Release${CPU}/memtier_benchmark.exe" "memtier_benchmark-win${CPU}.exe"
+  mv -v "bin/Debug${CPU}/memtier_benchmark.exe" "${MB_ARTIFACTS_DIR}/memtier_benchmark-win${CPU}_dbg.exe"
+  mv -v "bin/Release${CPU}/memtier_benchmark.exe" "${MB_ARTIFACTS_DIR}/memtier_benchmark-win${CPU}.exe"
 }
 
 make -f memtier_benchmark.mk clean
+
+mkdir -p "${MB_ARTIFACTS_DIR}"
 
 build_mb 64
 build_mb 32
 
 # Check binaries using objdump
-x86_64-w64-mingw32-objdump -x *win64*.exe | grep -E -i "(file format|dll name)"
-i686-w64-mingw32-objdump -x *win32*.exe | grep -E -i "(file format|dll name)"
+x86_64-w64-mingw32-objdump -x ${MB_ARTIFACTS_DIR}/*win64*.exe | grep -E -i "(file format|dll name)"
+i686-w64-mingw32-objdump -x ${MB_ARTIFACTS_DIR}/*win32*.exe | grep -E -i "(file format|dll name)"
 
-sha256sum *.exe | tee SHA256SUMS
+cd "${MB_ARTIFACTS_DIR}"
+sha256sum *.exe | tee "SHA256SUMS"

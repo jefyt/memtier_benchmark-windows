@@ -19,13 +19,19 @@ jobs:
         sudo apt-get install wine64
     - name: Build
       run: |
+        export MB_ARTIFACTS_DIR="${PWD}/artifacts"
         DOCKER_IMAGE='debian:testing'
         time docker pull "${DOCKER_IMAGE}"
-        time docker run -v "${PWD}:${PWD}" -w "${PWD}" "${DOCKER_IMAGE}" sh -c ./mingw/ci-debian.sh
+        time docker run -v "${PWD}:${PWD}" -w "${PWD}" --env-file <(env | grep -E '^(MB_)') "${DOCKER_IMAGE}" sh -c ./mingw/ci-debian.sh
         MB_EXE="memtier_benchmark-win64.exe"
-        ln -sf "mingw/${MB_EXE}"
+        ln -sf "${MB_ARTIFACTS_DIR}/${MB_EXE}"
         echo -e "#!/bin/sh\nwine ./../${MB_EXE} \$@" | tee memtier_benchmark
         chmod +x memtier_benchmark
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: artifacts
+        path: artifacts
     - name: Setup Python
       uses: actions/setup-python@v1
       with:
