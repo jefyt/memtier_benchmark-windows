@@ -74,14 +74,14 @@ build_mb() {
     export OPENSSL32_DIR="${PWD}/${OPENSSL_ARCHIVE_NAME}"
   fi
 
-  make CXX=${CC_PREFIX}g++ ${CPU} -f memtier_benchmark.mk
+  make CXX=${CC_PREFIX}g++ ${CPU} -f unix.mk
 
   # Rename binaries
   mv -v "bin/Debug${CPU}/memtier_benchmark.exe" "${MB_ARTIFACTS_DIR}/memtier_benchmark-win${CPU}_dbg.exe"
   mv -v "bin/Release${CPU}/memtier_benchmark.exe" "${MB_ARTIFACTS_DIR}/memtier_benchmark-win${CPU}.exe"
 }
 
-make -f memtier_benchmark.mk clean
+make -f unix.mk clean
 
 mkdir -p "${MB_ARTIFACTS_DIR}"
 
