@@ -115,3 +115,86 @@ jobs:
           --tls-ca-cert-file ../redis/tests/tls/ca.crt \
           --tls
         cd ..
+
+  memcached-windows-test:
+    needs: build-mingw
+    runs-on: windows-latest
+    steps:
+      - name: Download memtier_benchmark built artifacts
+        uses: actions/download-artifact@v1
+        with:
+          name: artifacts
+      - name: Download latest memcached-windows binaries
+        shell: cmd
+        run: |
+            set MC_BASE_URL=https://bintray.com/jefty/generic
+            curl -fsSR --connect-timeout 15 -m 20 --retry 3 -o UnxUtils.zip -L --proto-redir =https https://sourceforge.net/projects/unxutils/files/unxutils/current/UnxUtils.zip/download
+            7z x UnxUtils.zip
+            set BASENAME_CMD=usr\local\wbin\basename
+            FOR /F "tokens=* USEBACKQ" %%F IN (`curl -fsSR --connect-timeout 15 -m 20 --retry 3 -Ls -o NUL: -w %%{url_effective} %MC_BASE_URL%/memcached-windows/_latestVersion`) DO (
+                SET MC_RELEASE_URL=%%F
+            )
+            FOR /F "tokens=* USEBACKQ" %%F IN (`%BASENAME_CMD% %MC_RELEASE_URL%`) DO (
+                SET MC_VERSION=%%F
+            )
+            SET MC_ARCHIVE_NAME=memcached-%MC_VERSION%-win64-mingw
+            curl -fsSR --connect-timeout 15 -m 20 --retry 3 -o %MC_ARCHIVE_NAME%.zip -L --proto-redir =https %MC_BASE_URL%/download_file?file_path=%MC_ARCHIVE_NAME%.zip
+            7z x %MC_ARCHIVE_NAME%.zip
+            move %MC_ARCHIVE_NAME%\bin\memcached.exe .
+            curl -fsSR --connect-timeout 15 -m 20 --retry 3 -o memcached-cygwin.zip -L --proto-redir =https https://github.com/nono303/memcached/archive/master.zip
+            7z x memcached-cygwin.zip
+            set NMAP_VERSION=7.80
+            set NMAP_ARCHIVE_NAME=nmap-%NMAP_VERSION%
+            curl -fsSR --connect-timeout 15 -m 20 --retry 3 -o %NMAP_ARCHIVE_NAME%.zip -L --proto-redir =https https://nmap.org/dist/%NMAP_ARCHIVE_NAME%-win32.zip
+            7z x %NMAP_ARCHIVE_NAME%.zip
+            move %NMAP_ARCHIVE_NAME% nmap
+      - name: Test against memcached-windows binaries
+        shell: cmd
+        run: |
+            set MB_CMD=artifacts\memtier_benchmark-win64
+            set NC_CMD=nmap\ncat
+            set MB_RUN_COUNT=5
+            set MB_CLIENTS=100
+            set MB_THREADS=10
+            set MB_REQUESTS=1000
+            set MB_PROTOCOL=memcache_text
+            set MC_LOGS_DIR=memcached_logs
+            set MC_SERVER=127.0.0.1
+            set MC_PORT=11211
+            mkdir %MC_LOGS_DIR%
+            set MINGW_TCP_LOG=%MC_LOGS_DIR%\mingw_tcp.log
+            set CYGWIN_TCP_LOG=%MC_LOGS_DIR%\cygwin_tcp.log
+            set CYGWINAVX_TCP_LOG=%MC_LOGS_DIR%\cygwin-avx_tcp.log
+            set CYGWIN_PATH=memcached-master\cygwin\x64
+            set MC_EXE_NAME=memcached.exe
+            set MC_CMD=%MC_EXE_NAME%
+            %MC_CMD% --version
+            echo "Running memcached-windows..."
+            %MC_CMD% -dv -p %MC_PORT%
+            echo "Testing memtier_benchmark against memcached-windows..."
+            %MB_CMD% --out-file=%MINGW_TCP_LOG% --server=%MC_SERVER% --port=%MC_PORT% --protocol=%MB_PROTOCOL% --run-count=%MB_RUN_COUNT% --clients=%MB_CLIENTS% --threads=%MB_THREADS% --randomize --random-data --distinct-client-seed --requests=%MB_REQUESTS%
+            echo stats | %NC_CMD% %MC_SERVER% %MC_PORT% >> %MINGW_TCP_LOG%
+            taskkill /F /IM %MC_EXE_NAME% /T
+            echo "Running memcached-cygwin..."
+            set MC_EXE_NAME=memcached-avx-tls.exe
+            set MC_CMD=%CYGWIN_PATH%\%MC_EXE_NAME%
+            %MC_CMD% --version
+            %MC_CMD% -dv -p %MC_PORT%
+            echo "Testing memtier_benchmark against memcached-cygwin-avx..."
+            %MB_CMD% --out-file=%CYGWINAVX_TCP_LOG% --server=%MC_SERVER% --port=%MC_PORT% --protocol=%MB_PROTOCOL% --run-count=%MB_RUN_COUNT% --clients=%MB_CLIENTS% --threads=%MB_THREADS% --randomize --random-data --distinct-client-seed --requests=%MB_REQUESTS%
+            echo stats | %NC_CMD% %MC_SERVER% %MC_PORT% >> %CYGWINAVX_TCP_LOG%
+            taskkill /F /IM %MC_EXE_NAME% /T
+            echo "Running memcached-cygwin..."
+            set MC_EXE_NAME=memcached-tls.exe
+            set MC_CMD=%CYGWIN_PATH%\%MC_EXE_NAME%
+            %MC_CMD% --version
+            %MC_CMD% -dv -p %MC_PORT%
+            echo "Testing memtier_benchmark against memcached-cygwin..."
+            %MB_CMD% --out-file=%CYGWIN_TCP_LOG% --server=%MC_SERVER% --port=%MC_PORT% --protocol=%MB_PROTOCOL% --run-count=%MB_RUN_COUNT% --clients=%MB_CLIENTS% --threads=%MB_THREADS% --randomize --random-data --distinct-client-seed --requests=%MB_REQUESTS%
+            echo stats | %NC_CMD% %MC_SERVER% %MC_PORT% >> %CYGWIN_TCP_LOG%
+            taskkill /F /IM %MC_EXE_NAME% /T
+      - name: Archive memcached logs
+        uses: actions/upload-artifact@v1
+        with:
+            name: memcached_logs
+            path: memcached_logs
