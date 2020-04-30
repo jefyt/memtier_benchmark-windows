@@ -135,7 +135,7 @@
 #define PACKAGE_NAME "memtier_benchmark"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "memtier_benchmark 2020.04.20"
+#define PACKAGE_STRING "memtier_benchmark 1.3.0"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "memtier_benchmark"
@@ -144,7 +144,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "2020.04.20"
+#define PACKAGE_VERSION "1.3.0"
 
 /* Define to 1 if the `S_IS*' macros in <sys/stat.h> do not work properly. */
 /* #undef STAT_MACROS_BROKEN */
@@ -156,7 +156,7 @@
 #define USE_TLS 1
 
 /* Version number of package */
-#define VERSION "2020.04.20"
+#define VERSION "1.3.0"
 
 /* Define to rpl_malloc if the replacement function should be used. */
 /* #undef malloc */
