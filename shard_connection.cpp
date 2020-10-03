@@ -60,7 +60,6 @@ void cluster_client_read_handler(bufferevent *bev, void *ctx)
 {
     shard_connection *sc = (shard_connection *) ctx;
     assert(sc != NULL);
-
     sc->process_response();
 }
 
@@ -145,6 +144,7 @@ shard_connection::shard_connection(unsigned int id, connections_manager* conns_m
 
     m_pipeline = new std::queue<request *>;
     assert(m_pipeline != NULL);
+
 }
 
 shard_connection::~shard_connection() {
@@ -177,6 +177,7 @@ shard_connection::~shard_connection() {
         delete m_pipeline;
         m_pipeline = NULL;
     }
+
 }
 
 void shard_connection::setup_event(int sockfd) {
@@ -393,8 +394,9 @@ void shard_connection::process_response(void)
         protocol_response *r = m_protocol->get_response();
 
         request* req = pop_req();
-
-        if (req->m_type == rt_auth) {
+        switch (req->m_type)
+        {
+        case rt_auth:
             if (r->is_error()) {
                 benchmark_error_log("error: authentication failed [%s]\n", r->get_status());
                 error = true;
@@ -402,7 +404,8 @@ void shard_connection::process_response(void)
                 m_authentication = auth_done;
                 benchmark_debug_log("authentication successful.\n");
             }
-        } else if (req->m_type == rt_select_db) {
+            break;
+        case rt_select_db:
             if (strcmp(r->get_status(), "+OK") != 0) {
                 benchmark_error_log("database selection failed.\n");
                 error = true;
@@ -410,7 +413,8 @@ void shard_connection::process_response(void)
                 benchmark_debug_log("database selection successful.\n");
                 m_db_selection = select_done;
             }
-        } else if (req->m_type == rt_cluster_slots) {
+            break;
+        case rt_cluster_slots:
             if (r->get_mbulk_value() == NULL || r->get_mbulk_value()->mbulks_elements.size() == 0) {
                 benchmark_error_log("cluster slot failed.\n");
                 error = true;
@@ -422,7 +426,8 @@ void shard_connection::process_response(void)
                 m_cluster_slots = slots_done;
                 benchmark_debug_log("cluster slot command successful\n");
             }
-        } else {
+            break;
+        default:
             benchmark_debug_log("server %s: handled response (first line): %s, %d hits, %d misses\n",
                                 get_readable_id(),
                                 r->get_status(),
@@ -432,6 +437,7 @@ void shard_connection::process_response(void)
             m_conns_manager->handle_response(m_id, now, req, r);
             m_conns_manager->inc_reqs_processed();
             responses_handled = true;
+            break;
         }
         delete req;
         if (error) {
@@ -457,11 +463,18 @@ void shard_connection::process_response(void)
         }
     }
 
+    fill_pipeline();
+
+    // update events
+    if (m_bev != NULL) {
+        // no pending response (nothing to read) and output buffer empty (nothing to write)
+        if ((m_pending_resp == 0) && (evbuffer_get_length(bufferevent_get_output(m_bev)) == 0)) {
+            bufferevent_disable(m_bev, EV_WRITE|EV_READ);
+        }
+    }
+
     if (m_conns_manager->finished()) {
         m_conns_manager->set_end_time();
-        bufferevent_disable(m_bev, EV_WRITE|EV_READ);
-    } else {
-        fill_pipeline();
     }
 }
 
@@ -470,24 +483,18 @@ void shard_connection::process_first_request() {
     fill_pipeline();
 }
 
+
 void shard_connection::fill_pipeline(void)
 {
     struct timeval now;
     gettimeofday(&now, NULL);
-
     while (!m_conns_manager->finished() && m_pipeline->size() < m_config->pipeline) {
         if (!is_conn_setup_done()) {
             send_conn_setup_commands(now);
             return;
         }
-
         // don't exceed requests
         if (m_conns_manager->hold_pipeline(m_id)) {
-            // if we are still connected, disable any event
-            if (get_connection_state() == conn_connected) {
-                bufferevent_disable(m_bev, EV_WRITE|EV_READ);
-            }
-
             break;
         }
 
@@ -565,6 +572,7 @@ void shard_connection::send_set_command(struct timeval* sent_time, const char *k
     push_req(new request(rt_set, cmd_size, sent_time, 1));
 }
 
+
 void shard_connection::send_get_command(struct timeval* sent_time,
                                         const char *key, int key_len, unsigned int offset) {
     int cmd_size = 0;
@@ -587,7 +595,6 @@ void shard_connection::send_mget_command(struct timeval* sent_time, const keylis
                         key_list->get_keys_count(), first_key_len, first_key, last_key_len, last_key);
 
     cmd_size = m_protocol->write_command_multi_get(key_list);
-
     push_req(new request(rt_get, cmd_size, sent_time, key_list->get_keys_count()));
 }
 
@@ -599,7 +606,6 @@ void shard_connection::send_verify_get_command(struct timeval* sent_time, const 
                         key_len, key, value_len, expiry);
 
     cmd_size = m_protocol->write_command_get(key, key_len, offset);
-
     push_req(new verify_request(rt_get, cmd_size, sent_time, 1, key, key_len, value, value_len));
 }
 
