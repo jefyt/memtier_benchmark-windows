@@ -6,59 +6,59 @@ CFLAGS =  -Wextra -Wall -g -D_POSIX -DHAVE_CONFIG_H -DWIN32_LEAN_AND_MEAN -D_WIN
 RESINC =
 LIBDIR =
 LIB =
-LDFLAGS =  -static-libstdc++ -static-libgcc -Wl,-Bstatic -levent -Wl,-Bstatic -levent_openssl -Wl,-Bstatic -lssl -Wl,-Bstatic -lcrypto -Wl,-Bstatic -lpthread -Wl,-Bdynamic -lws2_32 -lbcrypt
+LDFLAGS =  -static-libstdc++ -static-libgcc -Wl,-Bstatic -levent -Wl,-Bstatic -levent_openssl -Wl,-Bstatic -lssl -Wl,-Bstatic -lcrypto -Wl,-Bstatic -lz -Wl,-Bstatic -lpthread -Wl,-Bdynamic -lws2_32 -liphlpapi -lbcrypt
 
-INC_DEBUG32 =  $(INC) -I$(LIBEVENT32_DIR)/include -I$(OPENSSL32_DIR)/include
+INC_DEBUG32 =  $(INC) -I$(LIBEVENT32_DIR)/include -I$(OPENSSL32_DIR)/include -I$(ZLIB32_DIR)
 CFLAGS_DEBUG32 =  $(CFLAGS) -m32 -g
 RESINC_DEBUG32 =  $(RESINC)
 RCFLAGS_DEBUG32 =  $(RCFLAGS)
-LIBDIR_DEBUG32 =  $(LIBDIR) -L$(LIBEVENT32_DIR)/lib -L$(OPENSSL32_DIR)/lib
+LIBDIR_DEBUG32 =  $(LIBDIR) -L$(LIBEVENT32_DIR)/lib -L$(OPENSSL32_DIR)/lib -L$(ZLIB32_DIR)
 LIB_DEBUG32 = $(LIB)
 LDFLAGS_DEBUG32 =  $(LDFLAGS) -m32
 OBJDIR_DEBUG32 = obj/Debug32
 DEP_DEBUG32 =
 OUT_DEBUG32 = bin/Debug32/memtier_benchmark.exe
 
-INC_RELEASE32 =  $(INC) -I$(LIBEVENT32_DIR)/include -I$(OPENSSL32_DIR)/include
+INC_RELEASE32 =  $(INC) -I$(LIBEVENT32_DIR)/include -I$(OPENSSL32_DIR)/include -I$(ZLIB32_DIR)
 CFLAGS_RELEASE32 =  $(CFLAGS) -O2 -m32
 RESINC_RELEASE32 =  $(RESINC)
 RCFLAGS_RELEASE32 =  $(RCFLAGS)
-LIBDIR_RELEASE32 =  $(LIBDIR) -L$(LIBEVENT32_DIR)/lib -L$(OPENSSL32_DIR)/lib
+LIBDIR_RELEASE32 =  $(LIBDIR) -L$(LIBEVENT32_DIR)/lib -L$(OPENSSL32_DIR)/lib -L$(ZLIB32_DIR)
 LIB_RELEASE32 = $(LIB)
 LDFLAGS_RELEASE32 =  $(LDFLAGS) -s -m32
 OBJDIR_RELEASE32 = obj/Release32
 DEP_RELEASE32 =
 OUT_RELEASE32 = bin/Release32/memtier_benchmark.exe
 
-INC_DEBUG64 =  $(INC) -I$(LIBEVENT64_DIR)/include -I$(OPENSSL64_DIR)/include
+INC_DEBUG64 =  $(INC) -I$(LIBEVENT64_DIR)/include -I$(OPENSSL64_DIR)/include -I$(ZLIB64_DIR)
 CFLAGS_DEBUG64 =  $(CFLAGS) -m64 -g
 RESINC_DEBUG64 =  $(RESINC)
 RCFLAGS_DEBUG64 =  $(RCFLAGS)
-LIBDIR_DEBUG64 =  $(LIBDIR) -L$(LIBEVENT64_DIR)/lib -L$(OPENSSL64_DIR)/lib
+LIBDIR_DEBUG64 =  $(LIBDIR) -L$(LIBEVENT64_DIR)/lib -L$(OPENSSL64_DIR)/lib -L$(ZLIB64_DIR)
 LIB_DEBUG64 = $(LIB)
 LDFLAGS_DEBUG64 =  $(LDFLAGS) -m64
 OBJDIR_DEBUG64 = obj/Debug64
 DEP_DEBUG64 =
 OUT_DEBUG64 = bin/Debug64/memtier_benchmark.exe
 
-INC_RELEASE64 =  $(INC) -I$(LIBEVENT64_DIR)/include -I$(OPENSSL64_DIR)/include
+INC_RELEASE64 =  $(INC) -I$(LIBEVENT64_DIR)/include -I$(OPENSSL64_DIR)/include -I$(ZLIB64_DIR)
 CFLAGS_RELEASE64 =  $(CFLAGS) -O2 -m64
 RESINC_RELEASE64 =  $(RESINC)
 RCFLAGS_RELEASE64 =  $(RCFLAGS)
-LIBDIR_RELEASE64 =  $(LIBDIR) -L$(LIBEVENT64_DIR)/lib -L$(OPENSSL64_DIR)/lib
+LIBDIR_RELEASE64 =  $(LIBDIR) -L$(LIBEVENT64_DIR)/lib -L$(OPENSSL64_DIR)/lib -L$(ZLIB64_DIR)
 LIB_RELEASE64 = $(LIB)
 LDFLAGS_RELEASE64 =  $(LDFLAGS) -s -m64
 OBJDIR_RELEASE64 = obj/Release64
 DEP_RELEASE64 =
 OUT_RELEASE64 = bin/Release64/memtier_benchmark.exe
 
-OBJ_DEBUG32 = $(OBJDIR_DEBUG32)/shard_connection.o $(OBJDIR_DEBUG32)/run_stats_types.o $(OBJDIR_DEBUG32)/run_stats.o $(OBJDIR_DEBUG32)/protocol.o $(OBJDIR_DEBUG32)/obj_gen.o $(OBJDIR_DEBUG32)/memtier_benchmark.o $(OBJDIR_DEBUG32)/item.o $(OBJDIR_DEBUG32)/file_io.o $(OBJDIR_DEBUG32)/config_types.o $(OBJDIR_DEBUG32)/cluster_client.o $(OBJDIR_DEBUG32)/client.o $(OBJDIR_DEBUG32)/JSON_handler.o
+OBJ_DEBUG32 = $(OBJDIR_DEBUG32)/shard_connection.o $(OBJDIR_DEBUG32)/run_stats_types.o $(OBJDIR_DEBUG32)/run_stats.o $(OBJDIR_DEBUG32)/protocol.o $(OBJDIR_DEBUG32)/obj_gen.o $(OBJDIR_DEBUG32)/memtier_benchmark.o $(OBJDIR_DEBUG32)/item.o $(OBJDIR_DEBUG32)/file_io.o $(OBJDIR_DEBUG32)/config_types.o $(OBJDIR_DEBUG32)/cluster_client.o $(OBJDIR_DEBUG32)/client.o $(OBJDIR_DEBUG32)/JSON_handler.o $(OBJDIR_DEBUG32)/deps/hdr_histogram/hdr_encoding.o $(OBJDIR_DEBUG32)/deps/hdr_histogram/hdr_histogram.o $(OBJDIR_DEBUG32)/deps/hdr_histogram/hdr_histogram_log.o $(OBJDIR_DEBUG32)/deps/hdr_histogram/hdr_time.o
 
-OBJ_RELEASE32 = $(OBJDIR_RELEASE32)/shard_connection.o $(OBJDIR_RELEASE32)/run_stats_types.o $(OBJDIR_RELEASE32)/run_stats.o $(OBJDIR_RELEASE32)/protocol.o $(OBJDIR_RELEASE32)/obj_gen.o $(OBJDIR_RELEASE32)/memtier_benchmark.o $(OBJDIR_RELEASE32)/item.o $(OBJDIR_RELEASE32)/file_io.o $(OBJDIR_RELEASE32)/config_types.o $(OBJDIR_RELEASE32)/cluster_client.o $(OBJDIR_RELEASE32)/client.o $(OBJDIR_RELEASE32)/JSON_handler.o
+OBJ_RELEASE32 = $(OBJDIR_RELEASE32)/shard_connection.o $(OBJDIR_RELEASE32)/run_stats_types.o $(OBJDIR_RELEASE32)/run_stats.o $(OBJDIR_RELEASE32)/protocol.o $(OBJDIR_RELEASE32)/obj_gen.o $(OBJDIR_RELEASE32)/memtier_benchmark.o $(OBJDIR_RELEASE32)/item.o $(OBJDIR_RELEASE32)/file_io.o $(OBJDIR_RELEASE32)/config_types.o $(OBJDIR_RELEASE32)/cluster_client.o $(OBJDIR_RELEASE32)/client.o $(OBJDIR_RELEASE32)/JSON_handler.o $(OBJDIR_RELEASE32)/deps/hdr_histogram/hdr_encoding.o $(OBJDIR_RELEASE32)/deps/hdr_histogram/hdr_histogram.o $(OBJDIR_RELEASE32)/deps/hdr_histogram/hdr_histogram_log.o $(OBJDIR_RELEASE32)/deps/hdr_histogram/hdr_time.o
 
-OBJ_DEBUG64 = $(OBJDIR_DEBUG64)/shard_connection.o $(OBJDIR_DEBUG64)/run_stats_types.o $(OBJDIR_DEBUG64)/run_stats.o $(OBJDIR_DEBUG64)/protocol.o $(OBJDIR_DEBUG64)/obj_gen.o $(OBJDIR_DEBUG64)/memtier_benchmark.o $(OBJDIR_DEBUG64)/item.o $(OBJDIR_DEBUG64)/file_io.o $(OBJDIR_DEBUG64)/config_types.o $(OBJDIR_DEBUG64)/cluster_client.o $(OBJDIR_DEBUG64)/client.o $(OBJDIR_DEBUG64)/JSON_handler.o
+OBJ_DEBUG64 = $(OBJDIR_DEBUG64)/shard_connection.o $(OBJDIR_DEBUG64)/run_stats_types.o $(OBJDIR_DEBUG64)/run_stats.o $(OBJDIR_DEBUG64)/protocol.o $(OBJDIR_DEBUG64)/obj_gen.o $(OBJDIR_DEBUG64)/memtier_benchmark.o $(OBJDIR_DEBUG64)/item.o $(OBJDIR_DEBUG64)/file_io.o $(OBJDIR_DEBUG64)/config_types.o $(OBJDIR_DEBUG64)/cluster_client.o $(OBJDIR_DEBUG64)/client.o $(OBJDIR_DEBUG64)/JSON_handler.o $(OBJDIR_DEBUG64)/deps/hdr_histogram/hdr_encoding.o $(OBJDIR_DEBUG64)/deps/hdr_histogram/hdr_histogram.o $(OBJDIR_DEBUG64)/deps/hdr_histogram/hdr_histogram_log.o $(OBJDIR_DEBUG64)/deps/hdr_histogram/hdr_time.o
 
-OBJ_RELEASE64 = $(OBJDIR_RELEASE64)/shard_connection.o $(OBJDIR_RELEASE64)/run_stats_types.o $(OBJDIR_RELEASE64)/run_stats.o $(OBJDIR_RELEASE64)/protocol.o $(OBJDIR_RELEASE64)/obj_gen.o $(OBJDIR_RELEASE64)/memtier_benchmark.o $(OBJDIR_RELEASE64)/item.o $(OBJDIR_RELEASE64)/file_io.o $(OBJDIR_RELEASE64)/config_types.o $(OBJDIR_RELEASE64)/cluster_client.o $(OBJDIR_RELEASE64)/client.o $(OBJDIR_RELEASE64)/JSON_handler.o
+OBJ_RELEASE64 = $(OBJDIR_RELEASE64)/shard_connection.o $(OBJDIR_RELEASE64)/run_stats_types.o $(OBJDIR_RELEASE64)/run_stats.o $(OBJDIR_RELEASE64)/protocol.o $(OBJDIR_RELEASE64)/obj_gen.o $(OBJDIR_RELEASE64)/memtier_benchmark.o $(OBJDIR_RELEASE64)/item.o $(OBJDIR_RELEASE64)/file_io.o $(OBJDIR_RELEASE64)/config_types.o $(OBJDIR_RELEASE64)/cluster_client.o $(OBJDIR_RELEASE64)/client.o $(OBJDIR_RELEASE64)/JSON_handler.o $(OBJDIR_RELEASE64)/deps/hdr_histogram/hdr_encoding.o $(OBJDIR_RELEASE64)/deps/hdr_histogram/hdr_histogram.o $(OBJDIR_RELEASE64)/deps/hdr_histogram/hdr_histogram_log.o $(OBJDIR_RELEASE64)/deps/hdr_histogram/hdr_time.o
 
 64: debug64 release64
 
@@ -70,7 +70,7 @@ clean: clean_debug32 clean_release32 clean_debug64 clean_release64
 
 before_debug32:
 	test -d bin/Debug32 || mkdir -p bin/Debug32
-	test -d $(OBJDIR_DEBUG32) || mkdir -p $(OBJDIR_DEBUG32)
+	test -d $(OBJDIR_DEBUG32)/deps/hdr_histogram || mkdir -p $(OBJDIR_DEBUG32)/deps/hdr_histogram
 
 after_debug32:
 
@@ -115,6 +115,18 @@ $(OBJDIR_DEBUG32)/client.o: ../client.cpp
 $(OBJDIR_DEBUG32)/JSON_handler.o: ../JSON_handler.cpp
 	$(CXX) $(CFLAGS_DEBUG32) $(INC_DEBUG32) -c ../JSON_handler.cpp -o $(OBJDIR_DEBUG32)/JSON_handler.o
 
+$(OBJDIR_DEBUG32)/deps/hdr_histogram/hdr_encoding.o: ../deps/hdr_histogram/hdr_encoding.c
+	$(CXX) $(CFLAGS_DEBUG32) $(INC_DEBUG32) -c ../deps/hdr_histogram/hdr_encoding.c -o $(OBJDIR_DEBUG32)/deps/hdr_histogram/hdr_encoding.o
+
+$(OBJDIR_DEBUG32)/deps/hdr_histogram/hdr_histogram.o: ../deps/hdr_histogram/hdr_histogram.c
+	$(CXX) $(CFLAGS_DEBUG32) $(INC_DEBUG32) -c ../deps/hdr_histogram/hdr_histogram.c -o $(OBJDIR_DEBUG32)/deps/hdr_histogram/hdr_histogram.o
+
+$(OBJDIR_DEBUG32)/deps/hdr_histogram/hdr_histogram_log.o: ../deps/hdr_histogram/hdr_histogram_log.c
+	$(CXX) $(CFLAGS_DEBUG32) $(INC_DEBUG32) -c ../deps/hdr_histogram/hdr_histogram_log.c -o $(OBJDIR_DEBUG32)/deps/hdr_histogram/hdr_histogram_log.o
+
+$(OBJDIR_DEBUG32)/deps/hdr_histogram/hdr_time.o: ../deps/hdr_histogram/hdr_time.c
+	$(CXX) $(CFLAGS_DEBUG32) $(INC_DEBUG32) -c ../deps/hdr_histogram/hdr_time.c -o $(OBJDIR_DEBUG32)/deps/hdr_histogram/hdr_time.o
+
 clean_debug32:
 	rm -f $(OBJ_DEBUG32) $(OUT_DEBUG32)
 	rm -rf bin/Debug32
@@ -122,7 +134,7 @@ clean_debug32:
 
 before_release32:
 	test -d bin/Release32 || mkdir -p bin/Release32
-	test -d $(OBJDIR_RELEASE32) || mkdir -p $(OBJDIR_RELEASE32)
+	test -d $(OBJDIR_RELEASE32)/deps/hdr_histogram || mkdir -p $(OBJDIR_RELEASE32)/deps/hdr_histogram
 
 after_release32:
 
@@ -167,6 +179,18 @@ $(OBJDIR_RELEASE32)/client.o: ../client.cpp
 $(OBJDIR_RELEASE32)/JSON_handler.o: ../JSON_handler.cpp
 	$(CXX) $(CFLAGS_RELEASE32) $(INC_RELEASE32) -c ../JSON_handler.cpp -o $(OBJDIR_RELEASE32)/JSON_handler.o
 
+$(OBJDIR_RELEASE32)/deps/hdr_histogram/hdr_encoding.o: ../deps/hdr_histogram/hdr_encoding.c
+	$(CXX) $(CFLAGS_RELEASE32) $(INC_RELEASE32) -c ../deps/hdr_histogram/hdr_encoding.c -o $(OBJDIR_RELEASE32)/deps/hdr_histogram/hdr_encoding.o
+
+$(OBJDIR_RELEASE32)/deps/hdr_histogram/hdr_histogram.o: ../deps/hdr_histogram/hdr_histogram.c
+	$(CXX) $(CFLAGS_RELEASE32) $(INC_RELEASE32) -c ../deps/hdr_histogram/hdr_histogram.c -o $(OBJDIR_RELEASE32)/deps/hdr_histogram/hdr_histogram.o
+
+$(OBJDIR_RELEASE32)/deps/hdr_histogram/hdr_histogram_log.o: ../deps/hdr_histogram/hdr_histogram_log.c
+	$(CXX) $(CFLAGS_RELEASE32) $(INC_RELEASE32) -c ../deps/hdr_histogram/hdr_histogram_log.c -o $(OBJDIR_RELEASE32)/deps/hdr_histogram/hdr_histogram_log.o
+
+$(OBJDIR_RELEASE32)/deps/hdr_histogram/hdr_time.o: ../deps/hdr_histogram/hdr_time.c
+	$(CXX) $(CFLAGS_RELEASE32) $(INC_RELEASE32) -c ../deps/hdr_histogram/hdr_time.c -o $(OBJDIR_RELEASE32)/deps/hdr_histogram/hdr_time.o
+
 clean_release32:
 	rm -f $(OBJ_RELEASE32) $(OUT_RELEASE32)
 	rm -rf bin/Release32
@@ -174,7 +198,7 @@ clean_release32:
 
 before_debug64:
 	test -d bin/Debug64 || mkdir -p bin/Debug64
-	test -d $(OBJDIR_DEBUG64) || mkdir -p $(OBJDIR_DEBUG64)
+	test -d $(OBJDIR_DEBUG64)/deps/hdr_histogram || mkdir -p $(OBJDIR_DEBUG64)/deps/hdr_histogram
 
 after_debug64:
 
@@ -219,6 +243,18 @@ $(OBJDIR_DEBUG64)/client.o: ../client.cpp
 $(OBJDIR_DEBUG64)/JSON_handler.o: ../JSON_handler.cpp
 	$(CXX) $(CFLAGS_DEBUG64) $(INC_DEBUG64) -c ../JSON_handler.cpp -o $(OBJDIR_DEBUG64)/JSON_handler.o
 
+$(OBJDIR_DEBUG64)/deps/hdr_histogram/hdr_encoding.o: ../deps/hdr_histogram/hdr_encoding.c
+	$(CXX) $(CFLAGS_DEBUG64) $(INC_DEBUG64) -c ../deps/hdr_histogram/hdr_encoding.c -o $(OBJDIR_DEBUG64)/deps/hdr_histogram/hdr_encoding.o
+
+$(OBJDIR_DEBUG64)/deps/hdr_histogram/hdr_histogram.o: ../deps/hdr_histogram/hdr_histogram.c
+	$(CXX) $(CFLAGS_DEBUG64) $(INC_DEBUG64) -c ../deps/hdr_histogram/hdr_histogram.c -o $(OBJDIR_DEBUG64)/deps/hdr_histogram/hdr_histogram.o
+
+$(OBJDIR_DEBUG64)/deps/hdr_histogram/hdr_histogram_log.o: ../deps/hdr_histogram/hdr_histogram_log.c
+	$(CXX) $(CFLAGS_DEBUG64) $(INC_DEBUG64) -c ../deps/hdr_histogram/hdr_histogram_log.c -o $(OBJDIR_DEBUG64)/deps/hdr_histogram/hdr_histogram_log.o
+
+$(OBJDIR_DEBUG64)/deps/hdr_histogram/hdr_time.o: ../deps/hdr_histogram/hdr_time.c
+	$(CXX) $(CFLAGS_DEBUG64) $(INC_DEBUG64) -c ../deps/hdr_histogram/hdr_time.c -o $(OBJDIR_DEBUG64)/deps/hdr_histogram/hdr_time.o
+
 clean_debug64:
 	rm -f $(OBJ_DEBUG64) $(OUT_DEBUG64)
 	rm -rf bin/Debug64
@@ -226,7 +262,7 @@ clean_debug64:
 
 before_release64:
 	test -d bin/Release64 || mkdir -p bin/Release64
-	test -d $(OBJDIR_RELEASE64) || mkdir -p $(OBJDIR_RELEASE64)
+	test -d $(OBJDIR_RELEASE64)/deps/hdr_histogram || mkdir -p $(OBJDIR_RELEASE64)/deps/hdr_histogram
 
 after_release64:
 
@@ -270,6 +306,18 @@ $(OBJDIR_RELEASE64)/client.o: ../client.cpp
 
 $(OBJDIR_RELEASE64)/JSON_handler.o: ../JSON_handler.cpp
 	$(CXX) $(CFLAGS_RELEASE64) $(INC_RELEASE64) -c ../JSON_handler.cpp -o $(OBJDIR_RELEASE64)/JSON_handler.o
+
+$(OBJDIR_RELEASE64)/deps/hdr_histogram/hdr_encoding.o: ../deps/hdr_histogram/hdr_encoding.c
+	$(CXX) $(CFLAGS_RELEASE64) $(INC_RELEASE64) -c ../deps/hdr_histogram/hdr_encoding.c -o $(OBJDIR_RELEASE64)/deps/hdr_histogram/hdr_encoding.o
+
+$(OBJDIR_RELEASE64)/deps/hdr_histogram/hdr_histogram.o: ../deps/hdr_histogram/hdr_histogram.c
+	$(CXX) $(CFLAGS_RELEASE64) $(INC_RELEASE64) -c ../deps/hdr_histogram/hdr_histogram.c -o $(OBJDIR_RELEASE64)/deps/hdr_histogram/hdr_histogram.o
+
+$(OBJDIR_RELEASE64)/deps/hdr_histogram/hdr_histogram_log.o: ../deps/hdr_histogram/hdr_histogram_log.c
+	$(CXX) $(CFLAGS_RELEASE64) $(INC_RELEASE64) -c ../deps/hdr_histogram/hdr_histogram_log.c -o $(OBJDIR_RELEASE64)/deps/hdr_histogram/hdr_histogram_log.o
+
+$(OBJDIR_RELEASE64)/deps/hdr_histogram/hdr_time.o: ../deps/hdr_histogram/hdr_time.c
+	$(CXX) $(CFLAGS_RELEASE64) $(INC_RELEASE64) -c ../deps/hdr_histogram/hdr_time.c -o $(OBJDIR_RELEASE64)/deps/hdr_histogram/hdr_time.o
 
 clean_release64:
 	rm -f $(OBJ_RELEASE64) $(OUT_RELEASE64)

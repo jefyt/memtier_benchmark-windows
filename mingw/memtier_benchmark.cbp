@@ -16,11 +16,13 @@
 					<Add option="-g" />
 					<Add directory="$(LIBEVENT32_DIR)/include" />
 					<Add directory="$(OPENSSL32_DIR)/include" />
+					<Add directory="$(ZLIB32_DIR)" />
 				</Compiler>
 				<Linker>
 					<Add option="-m32" />
 					<Add directory="$(LIBEVENT32_DIR)/lib" />
 					<Add directory="$(OPENSSL32_DIR)/lib" />
+					<Add directory="$(ZLIB32_DIR)" />
 				</Linker>
 			</Target>
 			<Target title="Release32">
@@ -33,12 +35,14 @@
 					<Add option="-m32" />
 					<Add directory="$(LIBEVENT32_DIR)/include" />
 					<Add directory="$(OPENSSL32_DIR)/include" />
+					<Add directory="$(ZLIB32_DIR)" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
 					<Add option="-m32" />
 					<Add directory="$(LIBEVENT32_DIR)/lib" />
 					<Add directory="$(OPENSSL32_DIR)/lib" />
+					<Add directory="$(ZLIB32_DIR)" />
 				</Linker>
 			</Target>
 			<Target title="Debug64">
@@ -51,11 +55,13 @@
 					<Add option="-g" />
 					<Add directory="$(LIBEVENT64_DIR)/include" />
 					<Add directory="$(OPENSSL64_DIR)/include" />
+					<Add directory="$(ZLIB64_DIR)" />
 				</Compiler>
 				<Linker>
 					<Add option="-m64" />
 					<Add directory="$(LIBEVENT64_DIR)/lib" />
 					<Add directory="$(OPENSSL64_DIR)/lib" />
+					<Add directory="$(ZLIB64_DIR)" />
 				</Linker>
 			</Target>
 			<Target title="Release64">
@@ -68,12 +74,14 @@
 					<Add option="-m64" />
 					<Add directory="$(LIBEVENT64_DIR)/include" />
 					<Add directory="$(OPENSSL64_DIR)/include" />
+					<Add directory="$(ZLIB64_DIR)" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
 					<Add option="-m64" />
 					<Add directory="$(LIBEVENT64_DIR)/lib" />
 					<Add directory="$(OPENSSL64_DIR)/lib" />
+					<Add directory="$(ZLIB64_DIR)" />
 				</Linker>
 			</Target>
 		</Build>
@@ -92,7 +100,7 @@
 		<Linker>
 			<Add option="-static-libstdc++" />
 			<Add option="-static-libgcc" />
-			<Add option="-Wl,-Bstatic -levent -Wl,-Bstatic -levent_openssl -Wl,-Bstatic -lssl -Wl,-Bstatic -lcrypto -Wl,-Bstatic -lpthread -Wl,-Bdynamic -lws2_32 -lbcrypt" />
+			<Add option="-Wl,-Bstatic -levent -Wl,-Bstatic -levent_openssl -Wl,-Bstatic -lssl -Wl,-Bstatic -lcrypto -Wl,-Bstatic -lz -Wl,-Bstatic -lpthread -Wl,-Bdynamic -lws2_32 -lbcrypt" />
 		</Linker>
 		<Unit filename="../JSON_handler.cpp" />
 		<Unit filename="../JSON_handler.h" />
@@ -103,6 +111,24 @@
 		<Unit filename="../config_types.cpp" />
 		<Unit filename="../config_types.h" />
 		<Unit filename="../connections_manager.h" />
+		<Unit filename="../deps/hdr_histogram/byteorder.h" />
+		<Unit filename="../deps/hdr_histogram/hdr_encoding.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../deps/hdr_histogram/hdr_encoding.h" />
+		<Unit filename="../deps/hdr_histogram/hdr_endian.h" />
+		<Unit filename="../deps/hdr_histogram/hdr_histogram.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../deps/hdr_histogram/hdr_histogram.h" />
+		<Unit filename="../deps/hdr_histogram/hdr_histogram_log.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../deps/hdr_histogram/hdr_histogram_log.h" />
+		<Unit filename="../deps/hdr_histogram/hdr_time.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="../deps/hdr_histogram/hdr_time.h" />
 		<Unit filename="../file_io.cpp" />
 		<Unit filename="../file_io.h" />
 		<Unit filename="../item.cpp" />

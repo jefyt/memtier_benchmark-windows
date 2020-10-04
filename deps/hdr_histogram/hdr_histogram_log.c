@@ -29,7 +29,11 @@ typedef SSIZE_T ssize_t;
 #pragma warning(disable: 4996)
 #endif
 
+#ifdef _WIN32
+#include "portable_endian.h"
+#else
 #include "hdr_endian.h"
+#endif // _WIN32
 
 /* Private prototypes useful for the logger */
 int32_t counts_index_for(const struct hdr_histogram* h, int64_t value);
@@ -113,7 +117,7 @@ union uint64_dbl_cvt
 static double int64_bits_to_double(int64_t i)
 {
     union uint64_dbl_cvt x;
-    
+
     x.l = (uint64_t) i;
     return x.d;
 }
@@ -894,7 +898,7 @@ int hdr_string_write(
     }
 
     encoded_len = hdr_base64_encoded_len(compressed_len);
-    *encoded_histogram = calloc(encoded_len + 1, sizeof(char));
+    *encoded_histogram = (char *)calloc(encoded_len + 1, sizeof(char));
 
     rc = hdr_base64_encode(
             compressed_histogram, compressed_len, *encoded_histogram, encoded_len);
@@ -1095,7 +1099,7 @@ int hdr_log_read_entry(
     size_t capacity = 1024;
     size_t base64_len = 0;
     size_t tag_offset = 0;
-    char* base64_histogram = calloc(capacity, sizeof(char));
+    char* base64_histogram = (char *)calloc(capacity, sizeof(char));
     size_t compressed_len = 0;
     uint8_t* compressed_histogram = NULL;
     int result = -EINVAL;
@@ -1204,7 +1208,7 @@ int hdr_log_read_entry(
                     if (base64_len == capacity)
                     {
                         capacity *= 2;
-                        base64_histogram = realloc(base64_histogram, capacity * sizeof(char));
+                        base64_histogram = (char *)realloc(base64_histogram, capacity * sizeof(char));
                         if (NULL == base64_histogram)
                         {
                             FAIL_AND_CLEANUP(cleanup, result, -ENOMEM);
@@ -1224,7 +1228,7 @@ int hdr_log_read_entry(
     }
     while (DONE != state);
 
-    compressed_histogram = calloc(base64_len, sizeof(uint8_t));
+    compressed_histogram = (uint8_t *)calloc(base64_len, sizeof(uint8_t));
     compressed_len = hdr_base64_decoded_len(base64_len);
 
     result = hdr_base64_decode(

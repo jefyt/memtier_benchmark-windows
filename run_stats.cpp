@@ -38,6 +38,18 @@
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
+#ifdef _WIN32
+/* Macros for converting between `struct timeval' and `struct timespec'.  */
+# define TIMEVAL_TO_TIMESPEC(tv, ts) {                                   \
+	(ts)->tv_sec = (tv)->tv_sec;                                    \
+	(ts)->tv_nsec = (tv)->tv_usec * 1000;                           \
+}
+# define TIMESPEC_TO_TIMEVAL(tv, ts) {                                   \
+	(tv)->tv_sec = (ts)->tv_sec;                                    \
+	(tv)->tv_usec = (ts)->tv_nsec / 1000;                           \
+}
+#endif
+
 void output_table::add_column(table_column& col) {
     assert(columns.empty() || columns[0].elements.size() == col.elements.size());
     columns.push_back(col);
@@ -310,7 +322,7 @@ std::vector<one_sec_cmd_stats> run_stats::get_one_sec_cmd_stats_get() {
     result.reserve(m_stats.size());
     for (std::vector<one_second_stats>::iterator i = m_stats.begin();
          i != m_stats.end(); i++) {
-            result.push_back(i->m_get_cmd);    
+            result.push_back(i->m_get_cmd);
     }
     return result;
 }
@@ -320,7 +332,7 @@ std::vector<one_sec_cmd_stats> run_stats::get_one_sec_cmd_stats_set() {
     result.reserve(m_stats.size());
     for (std::vector<one_second_stats>::iterator i = m_stats.begin();
          i != m_stats.end(); i++) {
-            result.push_back(i->m_set_cmd);    
+            result.push_back(i->m_set_cmd);
     }
     return result;
 }
@@ -369,7 +381,7 @@ std::vector<unsigned int> run_stats::get_one_sec_cmd_stats_timestamp() {
     result.reserve(m_stats.size());
     for (std::vector<one_second_stats>::iterator i = m_stats.begin();
          i != m_stats.end(); i++) {
-            result.push_back(i->m_second);    
+            result.push_back(i->m_second);
     }
     return result;
 }
@@ -404,7 +416,7 @@ void run_stats::save_csv_set_get_commands(FILE *f, bool cluster_mode) {
     fprintf(f, "Latency (<= msec),Percent\n");
     struct hdr_iter iter;
     struct hdr_iter_percentiles * percentiles;
-    
+
     hdr_iter_percentile_init(&iter, m_get_latency_histogram, LATENCY_HDR_GRANULARITY);
     percentiles = &iter.specifics.percentiles;
     while (hdr_iter_next(&iter)){
@@ -488,7 +500,7 @@ void run_stats::save_csv_arbitrary_commands(FILE *f, arbitrary_command_list& com
 
         struct hdr_iter iter;
         struct hdr_iter_percentiles * percentiles;
-        
+
         struct hdr_histogram* hist = m_ar_commands_latency_histograms.at(i);
         hdr_iter_percentile_init(&iter, hist, LATENCY_HDR_GRANULARITY);
         percentiles = &iter.specifics.percentiles;
@@ -527,8 +539,8 @@ bool run_stats::save_hdr_log_format(struct hdr_histogram* hdr, char* filename, c
     if(hdr_total_count( hdr )>0){
         // Prepare output file
         FILE *hdr_outfile;
-        struct timespec start_timespec;
-        struct timespec end_timespec;
+        hdr_timespec start_timespec;
+        hdr_timespec end_timespec;
         TIMEVAL_TO_TIMESPEC(&m_start_time, &start_timespec);
         TIMEVAL_TO_TIMESPEC(&m_end_time, &end_timespec);
         hdr_outfile = fopen(filename, "w");
@@ -795,9 +807,9 @@ void run_stats::summarize(totals& result) const
 }
 
 void result_print_to_json(json_handler * jsonhandler, const char * type, double ops,
-                          double hits, double miss, double moved, double ask, double kbs, 
-                          std::vector<float> quantile_list, struct hdr_histogram* latency_histogram, 
-                          std::vector<unsigned int> timestamps, 
+                          double hits, double miss, double moved, double ask, double kbs,
+                          std::vector<float> quantile_list, struct hdr_histogram* latency_histogram,
+                          std::vector<unsigned int> timestamps,
                           std::vector<one_sec_cmd_stats> timeserie_stats )
 {
     if (jsonhandler != NULL){ // Added for double verification in case someone accidently send NULL.
@@ -1200,7 +1212,7 @@ void run_stats::print_histogram(FILE *out, json_handler *jsonhandler, arbitrary_
             "Type", "<= msec   ", "Percent");
     struct hdr_iter iter;
     struct hdr_iter_percentiles * percentiles;
-    
+
 
     if (print_arbitrary_commands_results()) {
         for (unsigned int i = 0; i < command_list.size(); i++) {

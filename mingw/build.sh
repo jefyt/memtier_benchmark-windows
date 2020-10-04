@@ -36,6 +36,27 @@ dl_openssl_bin() {
   tar -xvf "${OPENSSL_ARCHIVE_FILE}" >/dev/null 2>&1 || exit 1
 }
 
+ZLIB_BASE_URL="https://bintray.com/vszakats/generic"
+ZLIB_LATEST_URL=$(curl -Ls -o /dev/null -w %{url_effective} ${ZLIB_BASE_URL}/zlib/_latestVersion)
+ZLIB_VER_=$(basename "${ZLIB_LATEST_URL}")
+dl_zlib_bin() {
+  ZLIB_CPU=$1
+  ZLIB_ARCHIVE_NAME="zlib-${ZLIB_VER_}-win${ZLIB_CPU}-mingw"
+  ZLIB_ARCHIVE_FILE="${ZLIB_ARCHIVE_NAME}.tar.xz"
+  ZLIB_ARCHIVE_SIG="${ZLIB_ARCHIVE_FILE}.asc"
+  # Download tarball
+  curl -o "${ZLIB_ARCHIVE_FILE}" -L --proto-redir =https "${ZLIB_BASE_URL}/download_file?file_path=${ZLIB_ARCHIVE_FILE}" || exit 1
+  # Download the signature
+  curl -o "${ZLIB_ARCHIVE_SIG}" -L --proto-redir =https "${ZLIB_BASE_URL}/download_file?file_path=${ZLIB_ARCHIVE_SIG}" || exit 1
+  # Verify with Bintray key
+  GPG_PK="379CE192D401AB61"
+  gpg_recv_key ${GPG_PK}
+  gpg --verify-options show-primary-uid-only --verify "${ZLIB_ARCHIVE_SIG}" "${ZLIB_ARCHIVE_FILE}" || exit 1
+  # Extract tarball
+  rm -rf "${ZLIB_ARCHIVE_NAME}"
+  tar -xvf "${ZLIB_ARCHIVE_FILE}" >/dev/null 2>&1 || exit 1
+}
+
 # MinGW-w64 binaries from https://bintray.com/jefty/generic/libevent-windows
 LIBEVENT_BASE_URL="https://bintray.com/jefty/generic"
 LIBEVENT_LATEST_URL=$(curl -Ls -o /dev/null -w %{url_effective} ${LIBEVENT_BASE_URL}/libevent-windows/_latestVersion)
@@ -62,16 +83,19 @@ build_mb() {
   CPU=$1
 
   dl_openssl_bin    $1
+  dl_zlib_bin       $1
   dl_libevent_bin   $1
 
   if [ "${CPU}" = "64" ] ; then
     CC_PREFIX="x86_64-w64-mingw32-"
     export LIBEVENT64_DIR="${PWD}/${LIBEVENT_ARCHIVE_NAME}"
     export OPENSSL64_DIR="${PWD}/${OPENSSL_ARCHIVE_NAME}"
+    export ZLIB64_DIR="${PWD}/${ZLIB_ARCHIVE_NAME}"
   else
     CC_PREFIX="i686-w64-mingw32-"
     export LIBEVENT32_DIR="${PWD}/${LIBEVENT_ARCHIVE_NAME}"
     export OPENSSL32_DIR="${PWD}/${OPENSSL_ARCHIVE_NAME}"
+    export ZLIB32_DIR="${PWD}/${ZLIB_ARCHIVE_NAME}"
   fi
 
   make CXX=${CC_PREFIX}g++ ${CPU} -f unix.mk
